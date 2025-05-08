@@ -1,0 +1,71 @@
+version: "3.8" # Or a newer compatible version
+
+services:
+  wireguard:
+    image: lscr.io/linuxserver/wireguard:latest
+    container_name: wireguard
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    environment:
+      - PUID=1000 # Replace with your user's PUID
+      - PGID=1000 # Replace with your user's PGID
+      - TZ=America/Chicago # Replace with your timezone, e.g., America/New_York
+    volumes:
+      - /opt/qbittorrent-with-wireguard/wireguard/config:/config # Mount the parent directory here.
+                                       # Your conf file should be at /opt/qbittorrent-with-wireguard/wireguard/config/wg_confs/myvpn.conf on the host.
+      - /lib/modules:/lib/modules:ro # Optional, for kernel modules, read-only is safer
+    ports:
+      # Expose qBittorrent's WebUI port THROUGH the WireGuard container.
+      # qBittorrent will listen on its WEBUI_PORT (8080 by default) inside the shared network.
+      - "8995:8995" # HostPort:ContainerPort (for qBittorrent WebUI)
+      - "28203:28203"     # qBittorrent torrenting port (TCP)
+      - "28203:28203/udp" # qBittorrent torrenting port (UDP)
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    restart: unless-stopped
+
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      - PUID=1000 # Match PUID with wireguard service
+      - PGID=1000 # Match PGID with wireguard service
+      - TZ=America/Chicago
+      - WEBUI_PORT=8995 # qBittorrent listens on this port internally
+      - TORRENTING_PORT=28203 # Must match the port exposed on wireguard service
+    volumes:
+      - /opt/qbittorrent-with-wireguard/qbittorrent/config:/config
+      - /data/Downloads:/downloads
+      - /data/Torrents:/torrents
+    network_mode: "service:wireguard" # CRITICAL: Use wireguard container's network stack
+    depends_on:
+      - wireguard # Ensures wireguard starts before qbittorrent
+    restart: unless-stopped
+
+  home-ip-fetcher:
+    build:
+      context: ./home-ip-fetcher
+      dockerfile: Dockerfile
+    environment:
+      - PORT=8080
+    container_name: home-ip-fetcher
+    restart: unless-stopped
+
+  vpn-status-monitor:
+    build:
+      context: ./vpn-status-monitor
+      dockerfile: Dockerfile
+    environment:
+      - PORT=4021
+      - HOME_IP_FETCHER_URL=http://home-ip-fetcher:8080
+    container_name: vpn-status-monitor
+    network_mode: "service:wireguard" # Uses WireGuard's network stack
+    ports:
+      - "9091:3000" # Expose monitor on host port 9091, maps to container port 3000
+    depends_on:
+      wireguard:
+        condition: service_healthy # Or service_started if no healthcheck
+      home-ip-fetcher:
+        condition: service_started # Ensure helper is up
+    restart: unless-stopped
