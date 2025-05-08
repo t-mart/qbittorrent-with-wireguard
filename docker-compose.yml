@@ -21,6 +21,7 @@ services:
       - "8995:8995" # HostPort:ContainerPort (for qBittorrent WebUI)
       - "28203:28203"     # qBittorrent torrenting port (TCP)
       - "28203:28203/udp" # qBittorrent torrenting port (UDP)
+      - "5008:5008" # Expose the VPN IP fetcher on host port 5008
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
     restart: unless-stopped
@@ -43,26 +44,26 @@ services:
       - wireguard # Ensures wireguard starts before qbittorrent
     restart: unless-stopped
 
-  home-ip-fetcher:
+  vpn-ip-fetcher:
     build:
       context: .
-      dockerfile: home-ip/Dockerfile
+      dockerfile: vpn-ip/Dockerfile
     environment:
-      - PORT=8080
-    container_name: home-ip-fetcher
+      - PORT=5008
+    container_name: vpn-ip-fetcher
     restart: unless-stopped
+    network_mode: "service:wireguard"
 
   vpn-status-monitor:
     build:
       context: .
       dockerfile: vpn-status/Dockerfile
     environment:
-      - PORT=4021
-      - HOME_IP_FETCHER_URL=http://home-ip-fetcher:8080
+      - PORT=5007
+      - VPN_IP_FETCHER_URL=http://wireguard:5008
     container_name: vpn-status-monitor
-    network_mode: "service:wireguard" # Uses WireGuard's network stack
     ports:
-      - "9091:3000" # Expose monitor on host port 9091, maps to container port 3000
+      - "5007:5007" # Expose monitor on host port 5007, maps to container port 5007
     depends_on:
       wireguard:
         condition: service_healthy # Or service_started if no healthcheck

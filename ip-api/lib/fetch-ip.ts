@@ -7,7 +7,7 @@ interface IpifyResponse {
   ip: string;
 }
 
-export async function getIP(): Promise<string> {
+export async function fetchIp(): Promise<string> {
   const response = await fetch(API_URL);
   if (!response.ok) {
     throw new Error(`Response not ok: ${response.status} ${response.statusText}`);

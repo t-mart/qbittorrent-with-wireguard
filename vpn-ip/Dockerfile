@@ -4,4 +4,4 @@ WORKDIR /app
 
 COPY ip-api/ .
 
-CMD ["bun", "run", "home-ip-main.ts"]
+CMD ["bun", "run", "vpn-ip-main.ts"]
