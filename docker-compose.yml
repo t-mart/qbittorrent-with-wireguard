@@ -45,8 +45,8 @@ services:
 
   home-ip-fetcher:
     build:
-      context: ./home-ip
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: home-ip/Dockerfile
     environment:
       - PORT=8080
     container_name: home-ip-fetcher
@@ -54,8 +54,8 @@ services:
 
   vpn-status-monitor:
     build:
-      context: ./vpn-status
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: vpn-status/Dockerfile
     environment:
       - PORT=4021
       - HOME_IP_FETCHER_URL=http://home-ip-fetcher:8080
