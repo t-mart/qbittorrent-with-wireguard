@@ -61,7 +61,7 @@ services:
       dockerfile: vpn-status/Dockerfile
     environment:
       - PORT=5008
-      - VPN_IP_FETCHER_URL=http://wireguard:5007
+      - VPN_IP_FETCHER_URL=http://wireguard:5007/ip
     container_name: vpn-status-monitor
     ports:
       - "5008:5008"
