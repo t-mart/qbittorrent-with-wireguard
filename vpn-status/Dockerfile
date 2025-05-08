@@ -2,6 +2,6 @@ FROM oven/bun:latest
 
 WORKDIR /app
 
-COPY ../ip-api .
+COPY ../ip-api/ .
 
-CMD ["bun", "run", "vpn-status-main.ts"]
+CMD ["bun", "run", "home-ip-main.ts"]
