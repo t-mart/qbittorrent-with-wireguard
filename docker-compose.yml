@@ -12,16 +12,17 @@ services:
       - PGID=1000 # Replace with your user's PGID
       - TZ=America/Chicago # Replace with your timezone, e.g., America/New_York
     volumes:
-      - /opt/qbittorrent-with-wireguard/wireguard/config:/config # Mount the parent directory here.
-                                       # Your conf file should be at /opt/qbittorrent-with-wireguard/wireguard/config/wg_confs/myvpn.conf on the host.
+      - /opt/qbittorrent-with-wireguard/wireguard/config:/config
+        # Mount the parent directory here.
+        # Your conf file should be at /opt/qbittorrent-with-wireguard/wireguard/config/wg_confs/myvpn.conf on the host.
       - /lib/modules:/lib/modules:ro # Optional, for kernel modules, read-only is safer
     ports:
       # Expose qBittorrent's WebUI port THROUGH the WireGuard container.
       # qBittorrent will listen on its WEBUI_PORT (8080 by default) inside the shared network.
       - "8995:8995" # HostPort:ContainerPort (for qBittorrent WebUI)
-      - "28203:28203"     # qBittorrent torrenting port (TCP)
+      - "28203:28203" # qBittorrent torrenting port (TCP)
       - "28203:28203/udp" # qBittorrent torrenting port (UDP)
-      - "5008:5008" # Expose the VPN IP fetcher on host port 5008
+      - "5007:5007" # Expose the VPN IP fetcher on host port 5007
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
     restart: unless-stopped
@@ -48,25 +49,25 @@ services:
     build:
       context: .
       dockerfile: vpn-ip/Dockerfile
+    network_mode: "service:wireguard"
     environment:
-      - PORT=5008
+      - PORT=5007
     container_name: vpn-ip-fetcher
     restart: unless-stopped
-    network_mode: "service:wireguard"
 
   vpn-status-monitor:
     build:
       context: .
       dockerfile: vpn-status/Dockerfile
     environment:
-      - PORT=5007
-      - VPN_IP_FETCHER_URL=http://wireguard:5008
+      - PORT=5008
+      - VPN_IP_FETCHER_URL=http://wireguard:5007
     container_name: vpn-status-monitor
     ports:
-      - "5007:5007" # Expose monitor on host port 5007, maps to container port 5007
+      - "5008:5008"
     depends_on:
       wireguard:
-        condition: service_healthy # Or service_started if no healthcheck
-      home-ip-fetcher:
+        condition: service_started # Ensure wireguard is up
+      vpn-ip-fetcher:
         condition: service_started # Ensure helper is up
     restart: unless-stopped
