@@ -12,7 +12,7 @@ services:
       - PGID=1000 # Replace with your user's PGID
       - TZ=America/Chicago # Replace with your timezone, e.g., America/New_York
     volumes:
-      - /opt/wireguard/config:/config
+      - /opt/homelab-config/wireguard/config:/config
         # Mount the parent directory here.
         # Your conf file should be at /opt/qbittorrent-with-wireguard/wireguard/config/wg_confs/myvpn.conf on the host.
       - /lib/modules:/lib/modules:ro # Optional, for kernel modules, read-only is safer
@@ -37,7 +37,7 @@ services:
       - WEBUI_PORT=8995 # qBittorrent listens on this port internally
       - TORRENTING_PORT=28203 # Must match the port exposed on wireguard service
     volumes:
-      - /opt/qbittorrent/config:/config
+      - /opt/homelab-config/qbittorrent/config:/config
       - /data/Downloads:/downloads
       - /data/Torrents:/torrents
     network_mode: "service:wireguard" # CRITICAL: Use wireguard container's network stack
